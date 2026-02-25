@@ -1,5 +1,7 @@
 numpy
-opencv-python
+opencv-python-headless
 matplotlib
 cryptography
 Pillow
+flask
+

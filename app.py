@@ -1,27 +1,30 @@
-"""
-Steganography Tools — Flask Web Application
-Run: python app.py
-"""
-
 import os
 import sys
 import uuid
 import json
 import threading
 from pathlib import Path
-from flask import Flask, request, jsonify, send_file, render_template_string
+from flask import Flask, request, jsonify, send_file
 from werkzeug.utils import secure_filename
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from modules import image_steg, text_steg, audio_steg, steganalysis, batch_encode
 
 # ── Config ────────────────────────────────────────────────────────────────────
-UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__), 'uploads')
-OUTPUT_FOLDER = os.path.join(os.path.dirname(__file__), 'outputs')
+# On Vercel serverless, only /tmp is writable. Locally, use project subdirs.
+if os.environ.get('VERCEL'):
+    UPLOAD_FOLDER = '/tmp/steg_uploads'
+    OUTPUT_FOLDER = '/tmp/steg_outputs'
+else:
+    UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'uploads')
+    OUTPUT_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'outputs')
+
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(OUTPUT_FOLDER, exist_ok=True)
 
-app = Flask(__name__)
+WEB_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'web')
+
+app = Flask(__name__, static_folder='web', static_url_path='/web')
 app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024  # 100 MB
 
 ALLOWED_IMAGE = {'png', 'jpg', 'jpeg', 'bmp'}
@@ -51,8 +54,7 @@ def out_path(ext):
 
 @app.route('/')
 def index():
-    with open(os.path.join(os.path.dirname(__file__), 'web', 'index.html'), 'r', encoding='utf-8') as f:
-        return f.read()
+    return send_file(os.path.join(WEB_DIR, 'index.html'))
 
 
 # --- Image Steganography ------------------------------------------------------
